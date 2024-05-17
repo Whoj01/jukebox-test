@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - internal-network
+  app:
+    image: 'php:8.2'
+    build: 
+      context: ./back-jukebox
+      dockerfile: Dockerfile
+    volumes:
+      - ./back-jukebox:/var/www
+    ports:
+      - "9000:9000"
+    tty: true
+    networks:
+      - internal-network
+  web:
+    build:
+      context: ./front-jukebox
+      dockerfile: Dockerfile
+    ports:
+      - 5173:5173
+    volumes:
+      - ./front-jukebox:/app
+  database:
+    image: postgres
+    environment:
+      - "POSTGRES_USER=postgres"
+      - "POSTGRES_PASSWORD=${DB_PASSWORD}"
+      - "POSTGRES_DB=${DB_DATABASE}"
+    ports:
+      - 5432:5432
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    networks:
+      - internal-network
+
+volumes:
+  pg-data:
+
+networks:
+  internal-network:
+    driver: bridge
